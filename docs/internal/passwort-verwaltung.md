@@ -48,7 +48,7 @@ nächsten Login-Versuch.
 
 ## Weg 2: "Passwort zurücksetzen"-Link (Self-Service, aktuell mit Umweg)
 
-1. Auf der Login-Seite (`https://files.nexgen-itsec.com/authelia`) auf
+1. Auf der Login-Seite (`https://files.example.com/authelia`) auf
    **"Passwort zurücksetzen?"** klicken, Benutzername eingeben.
 2. Authelia erzeugt einen Reset-Link — aber es ist noch **kein echter
    E-Mail-Versand (SMTP)** eingerichtet, sondern nur der `filesystem`-Notifier.

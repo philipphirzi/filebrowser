@@ -19,7 +19,7 @@ Zugriffsbeschränkung auf Informationen, A.5.14 Informationsübertragung).
 ## Einrichten
 
 Voraussetzung: SSH-Zugriff auf die VM (`ssh filebrowser-vm` bzw. Host
-`ubuntu-file-share`), `sudo`-Rechte.
+`<eure-VM>`), `sudo`-Rechte.
 
 ### 1. Dedizierten Ordner anlegen
 
@@ -81,7 +81,7 @@ rm -f /tmp/tok.txt
 
 ### 5. Zugangsdaten übermitteln
 
-Benutzername + temporäres Passwort + URL (`https://files.nexgen-itsec.com/files/`)
+Benutzername + temporäres Passwort + URL (`https://files.example.com/files/`)
 über einen separaten, vertrauenswürdigen Kanal an die Person schicken (nicht im
 selben Kanal wie ggf. mitgelesene Dokumente). Empfehlung: Person bittet, das
 Passwort nach dem ersten Login zu ändern (siehe unten).
