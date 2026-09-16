@@ -28,20 +28,18 @@ sind davon nicht abgedeckt, da es sich um Architekturentscheidungen im Code und
 nicht um reine Abhängigkeitsprobleme handelt. Diese werden hier formal bewertet
 und als Restrisiko dokumentiert.
 
-## 2. Risiko FB-RISK-001: Command-Runner / Hook- und Shell-Ausführung
+## 2. Risiko FB-RISK-001: Command-Runner / Hook- und Shell-Ausführung — ELIMINIERT
 
 | Feld | Angabe |
 |---|---|
 | Betroffene Assets | Server, auf dem File Browser läuft; alle darüber zugänglichen Daten |
-| Bedrohung | Remote Code Execution über Hook-Runner bzw. interaktive Shell |
-| Schwachstelle | Feature ist laut Upstream "plagued with vulnerabilities", bräuchte kompletten Rewrite (siehe [`docs/command-execution.md`](../command-execution.md), Issue [#5199](https://github.com/filebrowser/filebrowser/issues/5199)) |
-| Eintrittswahrscheinlichkeit (ohne Maßnahmen) | Mittel – nur ausnutzbar, wenn Feature aktiv genutzt wird |
-| Auswirkung (ohne Maßnahmen) | Sehr hoch – vollständige Serverkompromittierung, äquivalent zu Shell-Zugriff |
-| Bruttorisiko | Hoch |
-| Kompensationsmaßnahmen | 1) Feature bleibt deaktiviert (`--disable-exec` Standardwert, `auth.method` ≠ `hook`, keine Commands je Nutzer hinterlegt). 2) Regelmäßige Konfigurationsprüfung als Teil des internen Audits (siehe Abschnitt 4). 3) Betrieb im unprivilegierten Container mit minimalem Dateisystemzugriff. |
-| Restrisiko (mit Maßnahmen) | Niedrig |
+| Bedrohung (historisch) | Remote Code Execution über Hook-Runner bzw. interaktive Shell |
+| Schwachstelle (historisch) | Feature war laut Upstream "plagued with vulnerabilities", hätte kompletten Rewrite gebraucht (siehe [`docs/command-execution.md`](../command-execution.md), Issue [#5199](https://github.com/filebrowser/filebrowser/issues/5199)) |
+| Bruttorisiko (vor Maßnahme) | Hoch |
+| Maßnahme | **Vollständige Code-Entfernung am 2026-09-16.** Hook-Runner (`runner`-Paket), interaktive Shell (`/api/command`-Websocket, `EnableExec`/`--disable-exec`), zugehörige CLI-Subcommands (`filebrowser cmds ...`) und die `Execute`-Berechtigung wurden aus Backend und Frontend entfernt, statt nur per Konfiguration deaktiviert zu bleiben. Es existiert kein Schalter mehr, der das Feature reaktivieren könnte. |
+| Restrisiko (nach Maßnahme) | **Entfällt** – der verwundbare Code existiert nicht mehr im Fork. |
 | Risikoeigner | _______________________ (IT-/Security-Verantwortlicher) |
-| Entscheidung | ☐ Akzeptiert, unter der Bedingung, dass die Kompensationsmaßnahmen dauerhaft bestehen bleiben und im Audit-Log nachgewiesen werden. |
+| Entscheidung | ✅ **Eliminiert** (nicht nur akzeptiert) am 2026-09-16. Keine wiederkehrende Kompensationsmaßnahme nötig; nur bei künftigen Merges von Upstream-Änderungen prüfen, dass das Feature nicht versehentlich wieder eingeführt wird. |
 
 ## 3. Risiko FB-RISK-002: Session-/JWT-Handling ohne serverseitige Widerrufsmöglichkeit
 
@@ -62,7 +60,7 @@ und als Restrisiko dokumentiert.
 
 - **Turnus:** Vierteljährlich sowie anlassbezogen bei jedem größeren Update des Forks.
 - **Prüfpunkte:**
-  - Ist der Command-Runner weiterhin deaktiviert (Konfiguration, nicht nur Default)?
+  - Wurde bei Merges von Upstream-Änderungen der entfernte Command-Runner/Interactive-Shell-Code (FB-RISK-001) nicht versehentlich wieder eingeführt?
   - Ist der Auth-Reverse-Proxy aktiv und korrekt konfiguriert?
   - Sind offene Dependabot-/govulncheck-/OSV-Scanner-/Trivy-Befunde abgearbeitet oder bewusst zurückgestellt und begründet?
 - **Verantwortlich:** _______________________ (OSS-Component-Owner)

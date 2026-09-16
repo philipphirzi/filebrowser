@@ -31,8 +31,6 @@ type Settings struct {
 	LogoutPage            string              `json:"logoutPage"`
 	Branding              Branding            `json:"branding"`
 	Tus                   Tus                 `json:"tus"`
-	Commands              map[string][]string `json:"commands"`
-	Shell                 []string            `json:"shell"`
 	Rules                 []rules.Rule        `json:"rules"`
 	MinimumPasswordLength uint                `json:"minimumPasswordLength"`
 	FileMode              fs.FileMode         `json:"fileMode"`
@@ -57,7 +55,6 @@ type Server struct {
 	Log                    string `json:"log"`
 	EnableThumbnails       bool   `json:"enableThumbnails"`
 	ResizePreview          bool   `json:"resizePreview"`
-	EnableExec             bool   `json:"enableExec"`
 	TypeDetectionByHeader  bool   `json:"typeDetectionByHeader"`
 	ImageResolutionCal     bool   `json:"imageResolutionCalculation"`
 	AuthHook               string `json:"authHook"`

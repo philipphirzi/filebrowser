@@ -249,14 +249,3 @@ func jsonYamlArg(cmd *cobra.Command, args []string) error {
 	}
 }
 
-// convertCmdStrToCmdArray checks if cmd string is blank (whitespace included)
-// then returns empty string array, else returns the split word array of cmd.
-// This is to ensure the result will never be []string{""}
-func convertCmdStrToCmdArray(cmd string) []string {
-	var cmdArray []string
-	trimmedCmdStr := strings.TrimSpace(cmd)
-	if trimmedCmdStr != "" {
-		cmdArray = strings.Split(trimmedCmdStr, " ")
-	}
-	return cmdArray
-}
