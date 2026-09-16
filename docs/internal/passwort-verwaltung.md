@@ -12,12 +12,32 @@ liegt die eigentliche Anmeldung — und damit auch die Passwörter — bei Authe
 nicht mehr bei File Browser selbst. Authelias Nutzerdatenbank ist die Datei
 `/etc/authelia/users_database.yml` auf der VM.
 
-Es gibt zwei Wege, ein Passwort zu ändern: **manuell durch einen Admin** (aktuell
-der einzige praktikable Weg) oder über den **"Passwort zurücksetzen"-Link** im
-Login-Portal (funktioniert technisch, aber ohne echten E-Mail-Versand nur mit
-Umweg über die VM — siehe unten).
+Seit Einrichtung des echten SMTP-Versands (IONOS, `office@example.com`)
+ist der **Self-Service-Weg (Weg 1) der Standardweg** für alle Nutzer, die eine
+funktionierende, hinterlegte E-Mail-Adresse haben — inklusive externer Personen
+wie dem Steuerberater. Der manuelle Admin-Weg (Weg 2) bleibt als Fallback für
+Sonderfälle (z. B. Account ohne hinterlegte/funktionierende E-Mail-Adresse,
+oder schnelle Erstvergabe eines Accounts).
 
-## Weg 1: Manuell durch einen Admin (empfohlen, aktueller Standardweg)
+## Weg 1: Self-Service über "Passwort zurücksetzen" (Standardweg)
+
+1. Auf der Login-Seite auf **"Passwort zurücksetzen?"** klicken, Benutzername
+   eingeben.
+2. Authelia verschickt automatisch eine E-Mail mit Bestätigungscode an die im
+   Nutzer hinterlegte `email:`-Adresse (siehe `/etc/authelia/users_database.yml`).
+3. Die Person trägt den Code ein und setzt ihr eigenes neues Passwort — ganz
+   ohne Admin-Beteiligung.
+
+Funktioniert nur, wenn beim Nutzer eine echte, erreichbare E-Mail-Adresse
+hinterlegt ist. Beim Anlegen neuer Accounts also immer eine korrekte Adresse
+eintragen (siehe [`externer-pruefzugang.md`](externer-pruefzugang.md)).
+
+Derselbe E-Mail-Versand wird auch für die **Identitätsbestätigung beim
+Einrichten neuer 2FA-Methoden** (TOTP) verwendet (siehe
+[`audit-log-und-2fa.md`](audit-log-und-2fa.md)) — auch das läuft jetzt
+automatisch per Mail statt über den manuellen VM-Umweg.
+
+## Weg 2: Manuell durch einen Admin (Fallback)
 
 Voraussetzung: SSH-Zugriff auf die VM (`ssh filebrowser-vm`), `sudo`-Rechte.
 
@@ -46,30 +66,13 @@ ersetzen (Anführungszeichen beibehalten). Speichern: in `nano` mit `Strg+O`,
 Änderungen an der Datei werden automatisch erkannt und wirken sofort beim
 nächsten Login-Versuch.
 
-## Weg 2: "Passwort zurücksetzen"-Link (Self-Service, aktuell mit Umweg)
+## SMTP-Konfiguration (Referenz)
 
-1. Auf der Login-Seite (`https://files.example.com/authelia`) auf
-   **"Passwort zurücksetzen?"** klicken, Benutzername eingeben.
-2. Authelia erzeugt einen Reset-Link — aber es ist noch **kein echter
-   E-Mail-Versand (SMTP)** eingerichtet, sondern nur der `filesystem`-Notifier.
-   Das heißt: Der Link landet **nicht** im Postfach der Person, sondern wird in
-   eine Datei auf der VM geschrieben:
-   ```bash
-   sudo cat /var/lib/authelia/notification.txt
-   ```
-3. Den Link aus der Datei herauskopieren und der Person auf einem sicheren Weg
-   zukommen lassen (z. B. Chat, Telefon vorlesen — nicht unverschlüsselt per Mail
-   im selben Thread wie andere Dokumente).
-4. Die Person öffnet den Link und setzt ihr eigenes neues Passwort.
+In `/etc/authelia/configuration.yml`, Abschnitt `notifier.smtp`:
+- Server: `smtp.ionos.de:587` (STARTTLS)
+- Absender/Login: `office@example.com`
+- Passwort: direkt in der Datei hinterlegt (nicht in Git, nur lokal auf der VM)
 
-**Für externe Personen (z. B. Steuerberater) unpraktisch**, da sie keinen
-VM-Zugriff haben — für sie ist aktuell **Weg 1** der richtige Weg, bis SMTP
-eingerichtet ist.
-
-## Ausblick: Echter E-Mail-Versand (SMTP)
-
-Sobald ein SMTP-Zugang (z. B. bestehendes Geschäfts-Postfach) hinterlegt wird,
-funktioniert Weg 2 vollautomatisch für alle Nutzer selbständig, ohne Admin-
-Beteiligung. Dazu in `/etc/authelia/configuration.yml` den `notifier`-Abschnitt
-von `filesystem` auf `smtp` umstellen (Host, Port, Absender, Zugangsdaten).
-Bisher nicht umgesetzt, da noch kein SMTP-Zugang bereitgestellt wurde.
+Bei einem Passwortwechsel des Postfachs muss dieser Wert entsprechend
+aktualisiert und Authelia neu gestartet werden (`sudo systemctl restart authelia`
+— anders als bei `users_database.yml` gibt es hier kein automatisches Neuladen).
