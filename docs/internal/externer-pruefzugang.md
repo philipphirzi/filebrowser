@@ -104,13 +104,9 @@ wirkt dank `watch: true` sofort).
 Optional: den Ordner unter `/mnt/BigData/<ORDNERNAME>` archivieren oder löschen,
 falls er nur für diesen Zweck angelegt wurde.
 
-## Passwort manuell ändern (für beliebige Nutzer, auch außerhalb dieses Verfahrens)
+## Passwort ändern
 
-```bash
-sudo authelia crypto hash generate argon2   # fragt Passwort versteckt ab
-sudo nano /etc/authelia/users_database.yml  # password:-Zeile beim Nutzer ersetzen
-```
-
-Kein Neustart nötig (`watch: true`). Siehe auch
-[`docs/internal/risikoakzeptanz-restrisiken.md`](risikoakzeptanz-restrisiken.md)
-für den Gesamtkontext der Authelia-Einführung (FB-RISK-002).
+Siehe [`passwort-verwaltung.md`](passwort-verwaltung.md) für den vollständigen
+Ablauf (manuell durch Admin oder per Reset-Link). Siehe auch
+[`risikoakzeptanz-restrisiken.md`](risikoakzeptanz-restrisiken.md) für den
+Gesamtkontext der Authelia-Einführung (FB-RISK-002).
