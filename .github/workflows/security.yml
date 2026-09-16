@@ -36,6 +36,14 @@ jobs:
       scan-args: |-
         --recursive
         ./
+      # Reports everything (incl. LOW/MEDIUM in build-only devDependencies) to
+      # the Security > Code Scanning tab for triage, but does not fail the
+      # build on its own. Trivy below is the hard CI gate, restricted to
+      # CRITICAL/HIGH in dependencies that actually ship, so a known,
+      # low-priority finding in e.g. eslint/vite tooling can't block every
+      # push indefinitely. Track and clear findings via the quarterly review
+      # in docs/internal/risikoakzeptanz-restrisiken.md.
+      fail-on-vuln: false
 
   trivy-fs:
     name: Trivy Filesystem Scan
