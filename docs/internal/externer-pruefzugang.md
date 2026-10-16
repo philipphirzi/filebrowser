@@ -24,10 +24,16 @@ Voraussetzung: SSH-Zugriff auf die VM (`ssh filebrowser-vm` bzw. Host
 ### 1. Dedizierten Ordner anlegen
 
 ```bash
-sudo mkdir -p /mnt/BigData/<ORDNERNAME>
-sudo chown phil:phil /mnt/BigData/<ORDNERNAME>
-sudo chmod 750 /mnt/BigData/<ORDNERNAME>
+sudo install -d -o phil -g phil -m 750 /mnt/BigData/<ORDNERNAME>
 ```
+
+`/mnt/BigData` selbst gehört bewusst `root:root` (`755`). File Browser läuft als
+`phil` und kann dort daher **keine** Ordner auf oberster Ebene anlegen — weder
+über "Neuer Ordner" in der Oberfläche (→ 403) noch beim Anlegen eines Nutzers mit
+automatischem Home-Verzeichnis (→ 500 `failed to create user home dir ...
+permission denied`). Neue Ordner auf oberster Ebene deshalb immer wie oben per
+SSH anlegen, **bevor** der Nutzer angelegt wird. Das gilt für alle Nutzer, nicht
+nur für externe.
 
 Nur die Dokumente, die die externe Person sehen soll, in diesen Ordner legen
 (nicht auf einen bestehenden, umfassenderen Ordner freigeben).
@@ -49,25 +55,49 @@ sudo systemctl start filebrowser
 Passwort für den Login kommt aus Authelia (Proxy-Auth), dieses Feld wird nicht
 verwendet.
 
+Wird der Nutzer stattdessen in der File-Browser-Oberfläche angelegt: **Scope**
+auf `/<ORDNERNAME>` setzen (nicht `/` — sonst sieht der Nutzer ganz
+`/mnt/BigData`), und das dort eingegebene Passwort ist ebenfalls bedeutungslos.
+
 ### 3. Authelia-Account anlegen
 
+**Ohne diesen Schritt ist kein Login möglich** — auch nicht für Nutzer, die in
+der File-Browser-Oberfläche angelegt wurden. Authelia meldet dann nur
+"Benutzername oder Passwort falsch" (im Log: `user not found`).
+
+Die Datei ist mit **4 Leerzeichen** eingerückt; der neue Block muss genau dazu
+passen, sonst ist die YAML-Datei kaputt und **niemand** kann sich mehr anmelden.
+Daher erst eine Kopie bearbeiten, prüfen und dann übernehmen:
+
 ```bash
+F=/etc/authelia/users_database.yml
+sudo cp -p "$F" "$F.bak-$(date +%Y%m%d-%H%M%S)"
 PW=$(openssl rand -base64 15 | tr -d '=+/' | cut -c1-16)
 HASH=$(sudo authelia crypto hash generate argon2 --variant argon2id --password "$PW" | sed -n 's/^Digest: //p')
-sudo tee -a /etc/authelia/users_database.yml > /dev/null << EOF
-  <BENUTZERNAME>:
-    disabled: false
-    displayname: '<Klarname / Firma>'
-    password: '$HASH'
-    email: <optional>
-    groups:
-      - external
+TMP=$(mktemp)
+sudo cat "$F" > "$TMP"
+cat >> "$TMP" << EOF
+    <BENUTZERNAME>:
+        disabled: false
+        displayname: '<Klarname / Firma>'
+        password: '$HASH'
+        email: <E-Mail-Adresse>
+        groups:
+            - external
 EOF
+python3 -c 'import sys, yaml; print(sorted(yaml.safe_load(open(sys.argv[1]))["users"]))' "$TMP" \
+  && sudo install -o authelia -g authelia -m 640 "$TMP" "$F"
+rm -f "$TMP"
 echo "<BENUTZERNAME>:$PW"
 ```
 
+Der Benutzername muss exakt (inkl. Groß-/Kleinschreibung) dem File-Browser-Nutzer
+entsprechen. Für Mitarbeiter statt `external` die Gruppe `users` eintragen.
+
 Dank `watch: true` in `/etc/authelia/configuration.yml` wirkt die Änderung
-sofort, kein Neustart von Authelia nötig.
+sofort, kein Neustart von Authelia nötig. Ein einzelnes `permission denied` beim
+Reload im Authelia-Log direkt beim Ersetzen der Datei ist harmlos, solange
+danach `Reloaded successfully` folgt.
 
 ### 4. Testen, bevor die Zugangsdaten verschickt werden
 
@@ -103,6 +133,15 @@ wirkt dank `watch: true` sofort).
 
 Optional: den Ordner unter `/mnt/BigData/<ORDNERNAME>` archivieren oder löschen,
 falls er nur für diesen Zweck angelegt wurde.
+
+## Upload-Fehler 413 (nginx)
+
+File Browser lädt Dateien per TUS in 10-MB-Stücken hoch. Der nginx-Standard
+(`client_max_body_size 1m`) blockt das mit `413 Request Entity Too Large`. In
+`/etc/nginx/sites-available/filebrowser-auth.conf` ist deshalb im `server`-Block
+`client_max_body_size 64m;` gesetzt (gilt pro Stück, nicht für die Gesamtdatei).
+Bei Änderungen an der nginx-Konfiguration nicht entfernen; danach immer
+`sudo nginx -t && sudo systemctl reload nginx`.
 
 ## Passwort ändern
 
