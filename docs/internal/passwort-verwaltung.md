@@ -28,6 +28,12 @@ oder schnelle Erstvergabe eines Accounts).
 3. Die Person trägt den Code ein und setzt ihr eigenes neues Passwort — ganz
    ohne Admin-Beteiligung.
 
+**Alles auf einem Gerät im selben Browser erledigen.** Authelia merkt sich den
+laufenden Reset im Session-Cookie: Wird der Reset z. B. am Rechner gestartet und
+der Mail-Link auf dem Handy geöffnet, scheitert das Speichern des neuen Passworts
+(im Log: `no identity verification process has been initiated`). Der Link ist
+nur 5 Minuten gültig und nach dem Öffnen verbraucht — dann einfach neu anfordern.
+
 Funktioniert nur, wenn beim Nutzer eine echte, erreichbare E-Mail-Adresse
 hinterlegt ist. Beim Anlegen neuer Accounts also immer eine korrekte Adresse
 eintragen (siehe [`externer-pruefzugang.md`](externer-pruefzugang.md)).
@@ -71,8 +77,28 @@ nächsten Login-Versuch.
 In `/etc/authelia/configuration.yml`, Abschnitt `notifier.smtp`:
 - Server: `smtp.ionos.de:587` (STARTTLS)
 - Absender/Login: `office@example.com`
-- Passwort: direkt in der Datei hinterlegt (nicht in Git, nur lokal auf der VM)
+- Passwort: nicht in `configuration.yml`, sondern in der Secret-Datei
+  `/etc/authelia/secrets/notifier_smtp_password` (nicht in Git, nur lokal auf der VM)
 
 Bei einem Passwortwechsel des Postfachs muss dieser Wert entsprechend
 aktualisiert und Authelia neu gestartet werden (`sudo systemctl restart authelia`
 — anders als bei `users_database.yml` gibt es hier kein automatisches Neuladen).
+
+**Rechte des Secret-Verzeichnisses beachten.** Authelia läuft als Nutzer
+`authelia` und braucht auf das Verzeichnis das Ausführungsrecht (`x`), um die
+Datei darin öffnen zu können:
+
+```bash
+sudo chown -R authelia:authelia /etc/authelia/secrets
+sudo chmod 750 /etc/authelia/secrets
+sudo chmod 640 /etc/authelia/secrets/notifier_smtp_password
+```
+
+Fehlt das `x` (z. B. `drw-r-----`), startet Authelia nicht mehr
+(`file permission error occurred: open /etc/authelia/secrets/notifier_smtp_password:
+permission denied`, Portal liefert 502). `authelia validate-config` erkennt das
+**nicht** — nach jeder Änderung an den Secrets daher Authelia tatsächlich neu
+starten und mit `systemctl is-active authelia` prüfen, statt sich auf
+`validate-config` zu verlassen. Genau das ist am 2026-10-16 passiert: Die
+falschen Rechte bestanden seit der SMTP-Einrichtung am 2026-09-16 und fielen erst
+beim nächsten Neustart auf.
