@@ -42,7 +42,7 @@
     "video.js": "^8.23.3",
     "videojs-hotkeys": "^0.2.28",
     "videojs-mobile-ui": "^1.1.1",
-    "vue": "^3.5.17",
+    "vue": "^3.5.43",
     "vue-i18n": "^11.1.10",
     "vue-lazyload": "^3.0.0",
     "vue-reader": "^1.2.17",
